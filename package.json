@@ -1,6 +1,6 @@
 {
   "name": "ftpd-lite",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "TCP-based FTP server with multi-user support and permission control",
   "main": "src/index.js",
   "types": "src/index.d.ts",
