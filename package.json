@@ -1,0 +1,55 @@
+{
+  "name": "ftp-d",
+  "version": "1.0.1",
+  "description": "TCP-based FTP server with multi-user support and permission control",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "examples"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node examples/basic.js",
+    "test": "node test/ftp-client.js",
+    "test:manual": "node test/ftp-client.js --interactive",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run type-check && npm run build"
+  },
+  "keywords": [
+    "ftp",
+    "ftp-server",
+    "ftpd",
+    "tcp",
+    "server",
+    "multi-user",
+    "permission",
+    "node",
+    "typescript"
+  ],
+  "author": "levent Inan",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asymmetricstar/ftp-d.git"
+  },
+  "homepage": "https://github.com/asymmetricstar/ftp-d",
+  "bugs": {
+    "url": "https://github.com/asymmetricstar/ftp-d/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
