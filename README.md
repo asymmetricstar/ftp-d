@@ -1,4 +1,4 @@
-# Ftp-D
+# ftpd-lite
 
 An FTP server with multiple users and permission control, written in Node.js + TypeScript.
 It is imported as a library (`require`/`import`), and the port listening process starts when you call `start()`.
@@ -6,13 +6,13 @@ It is imported as a library (`require`/`import`), and the port listening process
 ## Installation
 
 ```bash
-npm install ftp-d
+npm install ftpd-lite
 ```
 
 ## Quick Start
 
 ```js
-const { FtpServer } = require('ftp-d');
+const { FtpServer } = require('ftpd-lite');
 
 const server = new FtpServer({
   port: 21,
@@ -36,7 +36,7 @@ server.start();
 TypeScript:
 
 ```ts
-import { FtpServer, type ServerConfig } from 'ftp-d';
+import { FtpServer, type ServerConfig } from 'ftpd-lite';
 
 const config: ServerConfig = {
   port: 21,
