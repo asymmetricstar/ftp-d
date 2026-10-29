@@ -20,10 +20,13 @@ export declare class FtpServer {
     private pendingRetrConnId;
     private pendingStorFile;
     private pendingStorConnId;
+    private dataConnectionClosedEarly;
     private inputBuffers;
     private commandQueues;
     private pendingDataSocket;
     private passiveConnId;
+    private dataWaitTimer;
+    private static readonly DATA_WAIT_TIMEOUT_MS;
     constructor(config?: Partial<typeof DEFAULT_CONFIG>);
     private normalizePortRange;
     private nextPassivePort;
@@ -37,6 +40,8 @@ export declare class FtpServer {
     private handlePassiveDataConnection;
     private ensureDataConnection;
     private tryServeData;
+    private armDataWaitTimeout;
+    private clearDataWaitTimeout;
     private clearPendingTransfers;
     private writeControl;
     closeConnection(connId: string, reason?: string): void;

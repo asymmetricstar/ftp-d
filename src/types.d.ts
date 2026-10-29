@@ -33,6 +33,8 @@ export declare enum ReplyCode {
     NO_SUCH_USER = 530,
     NOT_LOGGED = 530,
     WRITE_PROTECT = 451,
+    CANNOT_OPEN_DATA = 425,
+    TRANSFER_ABORTED = 426,
     INTERNAL_ERR = 500,
     BAD_CMD = 502,
     BAD_USER = 530,
