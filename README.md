@@ -9,14 +9,6 @@ It is imported as a library (`require`/`import`), and the port listening process
 npm install ftpd-lite
 ```
 
-## docker-Installation
-docker pull asymmetricstar/docker-ftpd:1.0.1
-
-docker run -d -p 21:21 -p 20:20 -p 50000-50050:50000-50050 \
-  -e FTP_DEFAULT_USER=admin -e FTP_DEFAULT_PASS=admin123 \
-  --name docker-ftpd asymmetricstar/docker-ftpd:1.0.1
-
-
 ## Quick Start
 
 ```js
@@ -124,6 +116,18 @@ To see the package contents before publishing:
 ```bash
 npm pack --dry-run
 ```
+
+## docker-Installation
+```bash 
+docker pull asymmetricstar/docker-ftpd:latest
+```
+
+```bash 
+docker run -d -p 21:21 -p 20:20 -p 50000-50050:50000-50050 \
+  -e FTP_DEFAULT_USER=admin -e FTP_DEFAULT_PASS=admin123 \
+  --name docker-ftpd asymmetricstar/docker-ftpd:latest
+```
+
 
 ## License
 
