@@ -29,6 +29,9 @@ export declare class FtpServer {
     private static readonly DATA_WAIT_TIMEOUT_MS;
     constructor(config?: Partial<typeof DEFAULT_CONFIG>);
     private normalizePortRange;
+    private normalizeIp;
+    private resolvePassiveIp;
+    private resolveListenIp;
     private nextPassivePort;
     private ensurePassiveListener;
     start(): void;

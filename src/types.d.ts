@@ -113,7 +113,7 @@ export type CommandHandler = (conn: FtpConnection, args: string) => Promise<Comm
 export interface ServerConfig {
     port: number;
     dataPort: number;
-    userFile: string;
+    userFile: string | UserManagerData;
     maxConnections: number;
     logLevel: 'debug' | 'info' | 'warn' | 'error';
     banner: string;
@@ -121,6 +121,7 @@ export interface ServerConfig {
         min: number;
         max: number;
     };
+    passiveIp?: string;
 }
 export interface TransferStatus {
     file: string;

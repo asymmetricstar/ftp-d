@@ -1,9 +1,11 @@
-import { User, UserPermissions, Permission } from './types';
+import { User, UserPermissions, UserManagerData, Permission } from './types';
 export declare class UserManager {
     private userFile;
+    private persist;
     private users;
     private data;
-    constructor(userFile: string);
+    constructor(userFile: string | UserManagerData | any);
+    private normalizeData;
     private load;
     private save;
     findUser(username: string): User | null;
