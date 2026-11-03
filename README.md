@@ -1,15 +1,20 @@
 # ftpd-lite
+![NPM Downloads](https://img.shields.io/npm/dw/ftpd-lite) ![Docker Pulls](https://img.shields.io/docker/pulls/asymmetricstar/docker-ftpd)
 
-An FTP server with multiple users and permission control, written in Node.js + TypeScript.
-It is imported as a library (`require`/`import`), and the port listening process starts when you call `start()`.
+
+Simple and lightweight FTP server written in Node.js + TypeScript.
+* multiple users
+* permission control
+* passive port support
+
 
 ## Installation
-
 ```bash
 npm install ftpd-lite
 ```
 
 ## Quick Start
+It is imported as a library (`require`/`import`), and the port listening process starts when you call `start()`.
 
 ```js
 const { FtpServer } = require('ftpd-lite');
@@ -88,7 +93,8 @@ If an invalid `passivePortRange` is provided, a warning is logged and the defaul
     }
   ],
   "lastUpdated": "2026-10-29T12:30:00.000Z"
-}
+},
+{...}
 ```
 
 `homeDir` is the user's virtual root: the client always sees it as `/` and
@@ -127,8 +133,3 @@ docker run -d -p 21:21 -p 20:20 -p 50000-50050:50000-50050 \
   -e FTP_DEFAULT_USER=admin -e FTP_DEFAULT_PASS=admin123 \
   --name docker-ftpd asymmetricstar/docker-ftpd:latest
 ```
-
-
-## License
-
-MIT
