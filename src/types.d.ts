@@ -122,6 +122,7 @@ export interface ServerConfig {
         max: number;
     };
     passiveIp?: string;
+    ip?: string;
 }
 export interface TransferStatus {
     file: string;

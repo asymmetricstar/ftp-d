@@ -11,6 +11,7 @@ export declare class FtpServer {
     private maxConnections;
     private passiveMode;
     private passiveIp;
+    private serverIp;
     private passiveDataServer;
     private passiveDataPort;
     private passivePortCursor;

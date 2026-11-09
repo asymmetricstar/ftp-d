@@ -1,6 +1,6 @@
 {
   "name": "ftpd-lite",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "TCP-based FTP server with multi-user support and permission control",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -17,9 +17,7 @@
     "examples"
   ],
   "scripts": {
-    "start": "node examples/basic.js",
-    "test": "node test/ftp-client.js",
-    "test:manual": "node test/ftp-client.js --interactive"
+    "start": "node examples/basic.js"
   },
   "keywords": [
     "ftp",
@@ -29,8 +27,7 @@
     "server",
     "multi-user",
     "permission",
-    "node",
-    "typescript"
+    "node"
   ],
   "author": "levent Inan",
   "license": "Apache-2.0",
@@ -44,6 +41,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "devDependencies": {}
+  }
 }

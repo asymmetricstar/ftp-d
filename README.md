@@ -20,6 +20,7 @@ It is imported as a library (`require`/`import`), and the port listening process
 const { FtpServer } = require('ftpd-lite');
 
 const server = new FtpServer({
+  ip: 0.0.0.0,
   port: 21,
   dataPort: 20,
   userFile: './users.json',
