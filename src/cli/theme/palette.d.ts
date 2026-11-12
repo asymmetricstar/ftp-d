@@ -1,0 +1,11 @@
+export declare const faint: (text: string) => string;
+export declare const dim: (text: string) => string;
+export declare const bold: (text: string) => string;
+export declare const red: (text: string) => string;
+export declare const green: (text: string) => string;
+export declare const yellow: (text: string) => string;
+export declare const cyan: (text: string) => string;
+export declare const accentGreen: (text: string) => string;
+export declare const accentRedSignedOut: (text: string) => string;
+export declare function visibleWidth(value: string): number;
+export declare function box(rows: string[]): string;

@@ -7,13 +7,13 @@ export declare class UserManager {
     constructor(dbOrData: DatabaseManager | any, persist?: boolean);
     private normalizeData;
     private load;
-    findUser(username: string): User | null;
+    findUser(username: string, includeInactive?: boolean): User | null;
     addUser(username: string, password: string, homeDir: string, permissions: UserPermissions): boolean;
     deleteUser(username: string): boolean;
     toggleUserStatus(username: string, isActive: boolean): boolean;
     updatePermissions(username: string, permissions: UserPermissions): boolean;
     checkPermission(username: string, permission: Permission): boolean;
-    listUsers(): User[];
+    listUsers(includeInactive?: boolean): User[];
     getUserStats(): Map<string, number>;
     getUserCount(): number;
     changeUsername(oldUsername: string, newUsername: string): boolean;

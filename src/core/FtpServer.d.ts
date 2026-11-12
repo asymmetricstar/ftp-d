@@ -1,6 +1,23 @@
 import { ServerConfig } from '../types';
 import { UserManager } from '../userManager';
 import { DatabaseManager } from '../db/database';
+export interface InternalServerConfig {
+    port: number;
+    dataPort: number;
+    maxConnections: number;
+    logLevel: 'debug' | 'info' | 'warn' | 'error';
+    banner: string;
+    passivePortRange: {
+        min: number;
+        max: number;
+    };
+    passiveIp?: string;
+    ip?: string;
+    dbPath?: string;
+}
+export declare const SETTING_KEYS: Record<string, string>;
+export type SettingKey = 'port' | 'dataPort' | 'maxConnections' | 'logLevel' | 'banner' | 'passivePortRange' | 'passiveIp' | 'ip' | 'dbPath';
+export declare const SUPPORTED_COMMANDS = "USER, PASS, CWD, PWD, LIST, RETR, STOR, DELE, QUIT, NOOP";
 export declare class FtpServer {
     private server;
     private dataServer;
@@ -11,6 +28,9 @@ export declare class FtpServer {
     private userManager;
     private connectionCount;
     private maxConnections;
+    private activeOperations;
+    private activeTransfers;
+    private idleFlushHandle;
     private passiveMode;
     private passiveIp;
     private serverIp;
@@ -33,16 +53,25 @@ export declare class FtpServer {
     constructor(config?: Partial<ServerConfig>);
     private loadConfigFromSettings;
     private saveSettingToDb;
-    updateSetting(key: keyof ServerConfig, value: any): void;
+    updateSetting(key: SettingKey, value: any): void;
     getDb(): DatabaseManager;
     getUserManager(): UserManager | null;
+    getRuntimeConfig(): Readonly<InternalServerConfig>;
+    clearSetting(key: SettingKey): boolean;
+    getConnectionCount(): number;
+    isBusy(): boolean;
+    private scheduleIdleFlush;
+    private finishTransfer;
+    isListening(): boolean;
     private normalizePortRange;
     private normalizeIp;
     private resolvePassiveIp;
     private resolveListenIp;
     private nextPassivePort;
     private ensurePassiveListener;
-    start(): void;
+    start(onReady?: () => void): void;
+    getListenAddress(): string;
+    stop(): void;
     private handleConnection;
     private handleControlData;
     private enqueueCommand;

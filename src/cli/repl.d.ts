@@ -1,2 +1,3 @@
-import { FtpServer } from '../core/FtpServer';
-export declare function startFtpRepl(server: FtpServer, port: number): Promise<void>;
+import type { FtpServer } from '../core/FtpServer';
+import type { ShellInfo } from './theme/banner.js';
+export declare function startShell(server: FtpServer, info?: ShellInfo): Promise<void>;
