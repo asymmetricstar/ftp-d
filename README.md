@@ -1,39 +1,29 @@
 # ftpd-lite
 ![NPM Downloads](https://img.shields.io/npm/dw/ftpd-lite) ![Docker Pulls](https://img.shields.io/docker/pulls/asymmetricstar/docker-ftpd)
 
-
 Simple and lightweight FTP server written in Node.js + TypeScript.
 * multiple users
 * permission control
 * passive port support
-
+* SQLite persistence (`ftpd.db`)
 
 ## Installation
+
 ```bash
 npm install ftpd-lite
 ```
 
 ## Quick Start
-It is imported as a library (`require`/`import`), and the port listening process starts when you call `start()`.
+
+The package is imported as a library (`require` / `import`). The listening process starts when you call `start()`.
 
 ```js
 const { FtpServer } = require('ftpd-lite');
 
 const server = new FtpServer({
-  ip: 0.0.0.0,
-  port: 21,
-  dataPort: 20,
-  userFile: './users.json',
-  maxConnections: 100,
-  logLevel: 'info',
-
-  // 220 welcome message (banner).
-  // If left empty, it automatically writes "<port> FTP Server Ready".
+  dbPath: './ftpd.db', // SQLite database (users + settings tables)
   banner: '',
-
-  // PASV (passive mode) data connection ports are selected from this range.
-  // It must be the same as the range that needs to be opened in the firewall.
-  passivePortRange: { min: 50000, max: 50050 },
+  logLevel: 'info',
 });
 
 server.start();
@@ -45,61 +35,53 @@ TypeScript:
 import { FtpServer, type ServerConfig } from 'ftpd-lite';
 
 const config: ServerConfig = {
-  port: 21,
-  dataPort: 20,
-  userFile: './users.json',
-  maxConnections: 100,
-  logLevel: 'info',
+  dbPath: './ftpd.db',
   banner: 'My FTP Server',
-  passivePortRange: { min: 50000, max: 50050 },
+  logLevel: 'info',
 };
 
 new FtpServer(config).start();
 ```
 
-## Settings
+## Configuration
 
-| Field | Default | Description |
+Only `dbPath`, `banner` and `logLevel` are part of the public `ServerConfig`.
+All other settings are read from the SQLite `settings` table.
+
+| Key | Default | Description |
 | --- | --- | --- |
-| `port` | `21` | Control (command) port |
-| `dataPort` | `20` | Classic data port |
-| `userFile` | `<package>/users.json` | Path to the user file (JSON) |
-| `maxConnections` | `100` | Maximum number of open connections at the same time |
-| `logLevel` | `'info'` | `debug` \| `info` \| `warn` \| `error` |
-| `banner` | `''` | 220 welcome message; if empty, `"<port> FTP Server Ready"` |
-| `passivePortRange` | `{ min: 50000, max: 50050 }` | Range from which PASV data ports will be selected (fallback) |
+| `ftp.port` | `21` | Control (command) port |
+| `ftp.dataPort` | `20` | Classic data port |
+| `ftp.maxConnections` | `100` | Maximum number of open connections at the same time |
+| `ftp.logLevel` | `'info'` | `debug` \| `info` \| `warn` \| `error` |
+| `ftp.banner` | `''` | 220 welcome message; if empty, `"<port> FTP Server Ready"` |
+| `ftp.passivePortRange` | `'50000:50050'` | PASV range as `min:max` |
 
 If an invalid `passivePortRange` is provided, a warning is logged and the default range is used.
 
-## User file (`users.json`)
+## Database
 
-```json
-{
-  "users": [
-    {
-      "username": "admin",
-      "password": "admin123",
-      "homeDir": "./files/admin",
-      "permissions": {
-        "read": true,
-        "write": true,
-        "list": true,
-        "create": true,
-        "delete": true,
-        "mkd": true,
-        "rmdir": true,
-        "rename": true
-      },
-      "isActive": true
-    }
-  ],
-  "lastUpdated": "2026-10-29T12:30:00.000Z"
-},
-{...}
+The server stores all data in a SQLite database file (default: `./ftpd.db`).
+
+- `users` table: user credentials, home directory and permissions (Linux style, e.g. `rwxr-xr-x`).
+- `settings` table: server settings (`ftp.*` keys).
+
+## User
+
+Users are persisted in the SQLite `users` table.
+
+```sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  homeDir TEXT NOT NULL,
+  permissions TEXT NOT NULL DEFAULT '{}',
+  isActive INTEGER NOT NULL DEFAULT 1,
+  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
+  updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
+);
 ```
-
-`homeDir` is the user's virtual root: the client always sees it as `/` and
-the client cannot go outside this directory (CWD/RETR/STOR/DELE/MKD/RMD/RNFR/RNTO are checked).
 
 ## Supported commands
 
@@ -109,28 +91,11 @@ the client cannot go outside this directory (CWD/RETR/STOR/DELE/MKD/RMD/RNFR/RNT
 > TLS/SSL (`AUTH TLS`), `MLSD`/`MLST`, `SIZE` and `MDTM` are not yet implemented and
 > are not advertised in the `FEAT` response.
 
-## Development in this repository
+## CLI / Interactive terminal
+
+The `ftpd` binary starts an interactive FTP terminal:
 
 ```bash
-npm run type-check   # tsc --noEmit
-npm run build        # src -> npm_build (index.js + index.d.ts)
-npm start            # runs the example server examples/basic.js
-npm test             # test client test/ftp-client.js
-```
-
-To see the package contents before publishing:
-
-```bash
-npm pack --dry-run
-```
-
-## docker-Installation
-```bash 
-docker pull asymmetricstar/docker-ftpd:latest
-```
-
-```bash 
-docker run -d -p 21:21 -p 20:20 -p 50000-50050:50000-50050 \
-  -e FTP_DEFAULT_USER=admin -e FTP_DEFAULT_PASS=admin123 \
-  --name docker-ftpd asymmetricstar/docker-ftpd:latest
+npx ftpd
+$: ftpd
 ```

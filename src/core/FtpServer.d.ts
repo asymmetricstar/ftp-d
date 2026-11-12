@@ -1,11 +1,13 @@
 import { ServerConfig } from '../types';
-declare const DEFAULT_CONFIG: ServerConfig;
+import { UserManager } from '../userManager';
+import { DatabaseManager } from '../db/database';
 export declare class FtpServer {
     private server;
     private dataServer;
     private connections;
     private dataConnections;
-    private config;
+    private runtime;
+    private db;
     private userManager;
     private connectionCount;
     private maxConnections;
@@ -28,7 +30,12 @@ export declare class FtpServer {
     private passiveConnId;
     private dataWaitTimer;
     private static readonly DATA_WAIT_TIMEOUT_MS;
-    constructor(config?: Partial<typeof DEFAULT_CONFIG>);
+    constructor(config?: Partial<ServerConfig>);
+    private loadConfigFromSettings;
+    private saveSettingToDb;
+    updateSetting(key: keyof ServerConfig, value: any): void;
+    getDb(): DatabaseManager;
+    getUserManager(): UserManager | null;
     private normalizePortRange;
     private normalizeIp;
     private resolvePassiveIp;
@@ -50,4 +57,3 @@ export declare class FtpServer {
     private writeControl;
     closeConnection(connId: string, reason?: string): void;
 }
-export {};

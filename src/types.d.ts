@@ -50,24 +50,15 @@ export declare enum ReplyCode {
     SERVICE_NOT_AVAILABLE = 421
 }
 export type Permission = 'read' | 'write' | 'list' | 'create' | 'append' | 'delete' | 'chmod' | 'mkd' | 'rmdir' | 'rename' | 'deletemyfiles' | 'nopasswd' | 'passive' | 'port' | 'nonlocalbind' | 'private' | 'tls';
-export interface UserPermissions {
+export interface LinuxPermissionAccess {
     read?: boolean;
     write?: boolean;
-    list?: boolean;
-    create?: boolean;
-    append?: boolean;
-    delete?: boolean;
-    chmod?: boolean;
-    mkd?: boolean;
-    rmdir?: boolean;
-    rename?: boolean;
-    deletemyfiles?: boolean;
-    nopasswd?: boolean;
-    passive?: boolean;
-    port?: boolean;
-    nonlocalbind?: boolean;
-    private?: boolean;
-    tls?: boolean;
+    execute?: boolean;
+}
+export interface UserPermissions {
+    owner?: LinuxPermissionAccess;
+    group?: LinuxPermissionAccess;
+    others?: LinuxPermissionAccess;
 }
 export interface FtpConnection {
     socket: net.Socket;
@@ -111,18 +102,13 @@ export interface CommandResult {
 }
 export type CommandHandler = (conn: FtpConnection, args: string) => Promise<CommandResult>;
 export interface ServerConfig {
-    port: number;
-    dataPort: number;
-    userFile: string | UserManagerData;
-    maxConnections: number;
-    logLevel: 'debug' | 'info' | 'warn' | 'error';
-    banner: string;
-    passivePortRange: {
-        min: number;
-        max: number;
-    };
-    passiveIp?: string;
-    ip?: string;
+    dbPath?: string;
+    banner?: string;
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
+}
+export interface UserManagerData {
+    users: User[];
+    lastUpdated: string;
 }
 export interface TransferStatus {
     file: string;

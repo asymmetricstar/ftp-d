@@ -1,13 +1,12 @@
-import { User, UserPermissions, UserManagerData, Permission } from './types';
+import { User, UserPermissions, Permission } from './types';
+import { DatabaseManager } from './db/database';
 export declare class UserManager {
-    private userFile;
-    private persist;
+    private db;
     private users;
-    private data;
-    constructor(userFile: string | UserManagerData | any);
+    private persist;
+    constructor(dbOrData: DatabaseManager | any, persist?: boolean);
     private normalizeData;
     private load;
-    private save;
     findUser(username: string): User | null;
     addUser(username: string, password: string, homeDir: string, permissions: UserPermissions): boolean;
     deleteUser(username: string): boolean;
@@ -20,7 +19,9 @@ export declare class UserManager {
     changeUsername(oldUsername: string, newUsername: string): boolean;
     changePassword(username: string, newPassword: string): boolean;
     changeHomeDir(username: string, newHomeDir: string): boolean;
-    static getInstance(userFile: string): UserManager;
+    getDb(): DatabaseManager | null;
+    static toLinuxAction(permission: Permission): 'read' | 'write' | 'execute';
+    static getInstance(db: DatabaseManager): UserManager;
     private static _instance;
 }
-export declare function getUserManager(userFile?: string): Promise<UserManager>;
+export declare function getUserManager(db?: DatabaseManager): Promise<UserManager>;
