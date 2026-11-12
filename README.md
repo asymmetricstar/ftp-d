@@ -2,18 +2,29 @@
 ![NPM Downloads](https://img.shields.io/npm/dw/ftpd-lite) ![Docker Pulls](https://img.shields.io/docker/pulls/asymmetricstar/docker-ftpd)
 
 Simple and lightweight FTP server written in Node.js + TypeScript.
+
+`ftpd-lite` works in two ways:
+
+- **as a module** — `require` / `import` it in your project and control the server from code
+- **as a binary** — `ftpd` for the interactive terminal, `ftpd --headless` for a plain server process
+
 * multiple users
 * permission control
 * passive port support
-* SQLite persistence (`ftpd.db`)
+* HTTP management API (accounts + logs)
+* interactive CLI and headless mode
+
+## Requirements
+
+- Node.js 22.5+ (uses the built-in `node:sqlite` module)
 
 ## Installation
 
 ```bash
-npm install ftpd-lite
+npm i -g ftpd-lite
 ```
 
-## Quick Start
+## Module usage
 
 The package is imported as a library (`require` / `import`). The listening process starts when you call `start()`.
 
@@ -21,18 +32,20 @@ The package is imported as a library (`require` / `import`). The listening proce
 const { FtpServer } = require('ftpd-lite');
 
 const server = new FtpServer({
-  dbPath: './ftpd.db', // SQLite database (users + settings tables)
+  dbPath: './ftpd.db', // SQLite database (users + settings + logs tables)
   banner: '',
   logLevel: 'info',
 });
 
-server.start();
+server.start(() => {
+  console.log(`FTP server ready on ${server.getListenAddress()}`);
+});
 ```
 
 TypeScript:
 
 ```ts
-import { FtpServer, type ServerConfig } from 'ftpd-lite';
+import { FtpServer, Logger, LogLevel, type ServerConfig } from 'ftpd-lite';
 
 const config: ServerConfig = {
   dbPath: './ftpd.db',
@@ -40,8 +53,54 @@ const config: ServerConfig = {
   logLevel: 'info',
 };
 
-new FtpServer(config).start();
+const server = new FtpServer(config);
+
+// Library default: records also go to the console. Silence them and read them
+// from the SQLite `logs` table instead (the `ftpd` binary does this for you).
+Logger.setConsoleOutput(false);
+Logger.setLevel(LogLevel.DEBUG);
+
+server.start();
 ```
+
+## Binary usage
+
+### Interactive terminal
+
+```bash
+npx ftpd
+```
+
+```
+  μFtp ━━━━ ●
+       ┣━━━ ●   ftpd-lite  v1.0.16
+       ┗━━━ ●   lightweight ftp server
+
+  # server    192.168.1.101:21
+  # commands  [USER, PASS, CWD, PWD, LIST, RETR, STOR, DELE, QUIT, NOOP]
+  # banner    21 FTP Server Ready
+  # logs      http://localhost:3001/logs
+
+  ✓ ready · type help to list the commands
+
+admin@ftpd:
+```
+
+### Headless
+
+```bash
+npx ftpd --headless
+```
+
+No terminal is opened. The server prints exactly one line and keeps running:
+
+```
+server ready 192.168.1.101:21
+```
+
+Nothing else is printed: records go to the SQLite `logs` table and the HTTP API.
+`SIGINT` / `SIGTERM` stop the server cleanly (buffered records are flushed first).
+The API port can be changed with `FTPD_API_PORT` (default `3001`).
 
 ## Configuration
 
@@ -56,34 +115,40 @@ All other settings are read from the SQLite `settings` table.
 | `ftp.logLevel` | `'info'` | `debug` \| `info` \| `warn` \| `error` |
 | `ftp.banner` | `''` | 220 welcome message; if empty, `"<port> FTP Server Ready"` |
 | `ftp.passivePortRange` | `'50000:50050'` | PASV range as `min:max` |
+| `ftp.passiveIp` | `(auto)` | Address advertised in the `227` reply |
+| `ftp.ip` | `(auto)` | Interface the server binds to |
 
 If an invalid `passivePortRange` is provided, a warning is logged and the default range is used.
 
-## Database
 
-The server stores all data in a SQLite database file (default: `./ftpd.db`).
+## Logs
 
-- `users` table: user credentials, home directory and permissions (Linux style, e.g. `rwxr-xr-x`).
-- `settings` table: server settings (`ftp.*` keys).
+Server logs are not printed to the terminal; they are written to the `logs` table and read
+through the HTTP API.
 
-## User
+**Write priority:** FTP work always comes first. Records are buffered in memory and written to
+SQLite in a single transaction only while no command or transfer is running, so log writes never
+compete with user traffic. `GET /logs` reports the number of records still waiting in memory as `pending`.
 
-Users are persisted in the SQLite `users` table.
+## HTTP API
 
-```sql
-CREATE TABLE users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  homeDir TEXT NOT NULL,
-  permissions TEXT NOT NULL DEFAULT '{}',
-  isActive INTEGER NOT NULL DEFAULT 1,
-  createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-  updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
-);
+The `ftpd` binary serves this API on `http://localhost:3001` (`FTPD_API_PORT` changes the port).
+
+| Method & path | Description |
+| --- | --- |
+| `GET /logs` | Log records (query: `limit`, `since`, `level`, `format`) |
+| `DELETE /logs` | Clear the `logs` table (memory buffer included) |
+| `GET /users` | List accounts |
+| `POST /users` | Add account (JSON: `{username, password, homeDir?, permissions?}`) |
+| `PUT /users/:name` | Update account (JSON: `{password?, home?, perm?}`) |
+| `DELETE /users/:name` | Delete account and its home directory |
+
+```bash
+curl "http://localhost:3001/logs?format=text&limit=50"
+curl "http://localhost:3001/logs?since=120"   # only new records
 ```
 
-## Supported commands
+## Supported FTP commands
 
 `USER`, `PASS`, `QUIT`, `NOOP`, `PWD`, `CWD`, `LIST`, `NLST`, `RETR`, `STOR`, `DELE`,
 `MKD`, `RMD`, `RNFR`, `RNTO`, `PASV`, `PORT`, `TYPE`, `SYST`, `FEAT`
@@ -91,116 +156,67 @@ CREATE TABLE users (
 > TLS/SSL (`AUTH TLS`), `MLSD`/`MLST`, `SIZE` and `MDTM` are not yet implemented and
 > are not advertised in the `FEAT` response.
 
-## CLI / Interactive terminal
-
-The `ftpd` binary starts the server and opens an interactive shell. Startup logs are
-cleared before the banner is drawn, so the prompt is ready immediately:
-
-```bash
-npx ftpd
-
-  μFtp ━━━━ ●
-       ┣━━━ ●   FTP-LITE  v0.0.2
-       ┗━━━ ●   lightweight ftp server
-
-  # server    192.168.1.101:21
-  # commands  [USER, PASS, CWD, PWD, LIST, RETR, STOR, DELE, QUIT, NOOP]
-  # banner    21 FTP Server Ready
-
-  ✓ ready · type help to list the commands
-
-anonim@ftpd: 
-```
-
-The prompt is `account@ftpd:` (primary colour `#7CFC00`) and the shell has history (`↑↓`),
-tab completion, quoted arguments (`add bob "my pass"`) and `help <command>` for per-command usage.
-
-### Session
-
-| Command | Description |
-| --- | --- |
-| `help [command]` | Show help, or usage of one command |
-| `clear` | Clear the screen |
-| `version` | Show version |
-| `status` | Server state, ports, connections, session |
-| `whoami` | Current account, home and permissions |
-| `exit` (`quit`, `q`, `:q`) | Stop the server and leave the shell |
 
 ### Files
 
-All paths are resolved inside the account home directory (shell is chrooted like an FTP client).
+All paths are resolved inside the account home directory (the shell is chrooted like an FTP client).
 Operations check the account's Linux permissions (`rwxr-xr-x`).
 
 | Command | Description |
 | --- | --- |
-| `ls [path]` | List a directory |
+| `ls [path]` (`dir`) | List a directory |
 | `pwd` | Print the working directory |
 | `cd <path>` | Change directory |
 | `mkdir <dir>` | Create a directory (needs `w`) |
-| `touch <file>` | Create an empty file (needs `w`) |
-| `rm [-r] <path>` | Remove a file or directory (needs `w`) |
-| `mv <src> <dst>` | Rename or move (needs `w`) |
-| `cat <file>` | Print a text file (needs `r`) |
+| `rm [-r] <path>` (`remove`) | Remove a file or directory (needs `w`) |
+| `mv <src> <dst>` (`rename`) | Rename or move (needs `w`) |
 
 ### Users
 
-Bare `list` (or `users`) prints the accounts table directly. Bare `user` opens an
-interactive menu, same style as `config`; each step asks for its input through the
-shell prompt (passwords are not echoed). The menu runs one action and returns to
-the prompt (only an invalid option asks again):
+Bare `list` (or `users`) prints the accounts table. `add`, `del` and `update` prompt for missing
+fields through the shell prompt (passwords are not echoed):
 
 ```text
-anonim@ftpd: list
+admin@ftpd: list
 USER              STATUS      PERMS  HOME
 ────────────────  ──────────  ─────────  ────────────────────
-anonim            active      r-xr-xr-x  F:\project
+anonymous         active      r-xr-xr-x  F:\project
 
-anonim@ftpd: user
-  [1] List accounts
-  [2] Add account
-  [3] Delete account
-  [4] Update account
-  [5] Back
-
-Select an option [1-5]: 2
-  Username: alice
-  Password: ****
-  Home [F:\project]: 
-  Permissions [rwxr-xr-x]: 
+admin@ftpd: add --username alice --password secret --home ./alice --perm rwxr-xr-x
 ✓ user alice created
+  home  F:\project\alice
+  perms rwxr-xr-x
 
-anonim@ftpd: 
+admin@ftpd:
 ```
 
-Enable/disable lives inside **Update account** (prompt: `Status [enable/disable]`).
+Without flags (`admin@ftpd: add`), the shell asks for `Username`, `Password` and
+`Home [./]`, then prints an interactive permission table.
 
 | Command | Description |
 | --- | --- |
 | `list` (`users`) | Print the accounts table |
-| `user` | Interactive accounts menu |
-| `user list` / `list table` | Print the accounts table (subcommand style) |
-| `add <name> <password> [home] [rwxr-xr-x]` (`useradd`) | Create an account |
-| `del <name>` (`userdel`) | Delete an account |
-| `update <name> [--password x] [--home x] [--username x] [--perm rwxr-xr-x] [--enable\|--disable]` | Update password, home, username, permissions or status |
-
-Subcommand style (`user ...`) also works: `user passwd`, `user enable`, `user disable`,
-`user perm <name> <rwxr-xr-x>`.
+| `add --username <name> --password <pass> [--home <dir>] [--perm <rwxr-xr-x>]` (`useradd`) | Create an account |
+| `del --username <name>` (`userdel`) | Delete an account and its home directory |
+| `update --username <name> [--password x] [--home x] [--new-username x] [--perm rwxr-xr-x] [--enable\|--disable]` | Update password, home, username, permissions or status |
 
 ### Config
 
 Settings live in the SQLite `settings` table and can be edited from the shell.
 Bare `config` opens an interactive selection menu (values are prompted with their
-current value in `[brackets]`; `logLevel` is a numbered choice). One selection is
-applied and the shell returns to the prompt:
+current value in `[brackets]`; `logLevel` is a numbered choice). The last entry before
+**Back** clears the log table after a `[y/n]` confirmation:
 
 ```text
-anonim@ftpd: config
+admin@ftpd: config
   [1] port              21 *
   [2] dataPort          20 *
   ...
-  [10] Back
+  [9] dbPath            ./ftpd.db (read-only)
+  [10] Clear logs        142 rows
+  [11] Back
 
-Select an option [1-10]: 4
+Select an option [1-11]: 4
     [1] debug
     [2] info
     [3] warn
@@ -209,23 +225,26 @@ Select an option [1-10]: 4
   logLevel [1-4] (Enter keeps current): 2
 ✓ logLevel = info
 
-anonim@ftpd: 
+admin@ftpd: config
+Select an option [1-11]: 10
+Delete all 142 log records? [y/n]: y
+✓ logs cleared (142 rows deleted)
 ```
 
 | Command | Description |
 | --- | --- |
-| `config` | Interactive settings menu |
+| `config` | Interactive settings menu (includes **Clear logs**) |
 | `config show` | Print all settings (`*` = restart required) |
-| `config get <key>` / `get <key>` | Print one setting |
-| `config set <key> <value>` / `set <key> <value>` | Update and persist a setting |
+| `config get <key>` | Print one setting |
+| `config set <key> <value>` | Update and persist a setting |
 | `config unset <key>` | Remove a setting (default is used after restart) |
-| `config path` | Database and history file locations |
+| `config path` | Database, tables and history file locations |
 
 ```text
-anonim@ftpd: set port 2121
-✓ port = 2121 · restart required
-anonim@ftpd: set logLevel debug
+admin@ftpd: config set port 2121
+✓ port = 2121 · restart required and applied
+admin@ftpd: config set logLevel debug
 ✓ logLevel = debug
-anonim@ftpd: update anonim --perm rwxr-xr-x
-✓ anonim: perm -> rwxr-xr-x
+admin@ftpd: update --username anonymous --perm rwxr-xr-x
+✓ anonymous: perm -> rwxr-xr-x
 ```

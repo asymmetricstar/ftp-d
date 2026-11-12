@@ -20,7 +20,7 @@
     "examples"
   ],
   "scripts": {
-    "start": "node examples/basic.js"
+    "start": "node src/ftpd.js"
   },
   "keywords": [
     "ftp",
